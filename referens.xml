@@ -1,0 +1,23 @@
+<people>
+    <person>
+        <firstname>Elof</firstname>
+        <lastname>Sundin</lastname>
+        <address>
+            <street>S:t Johannesgatan 16</street>
+            <city>Uppsala</city>
+            <zip>75330</zip>
+        </address>
+        <phone>
+            <mobile>073-101801</mobile>
+            <landline>018-101801</landline>
+        </phone>
+        <family>
+            <name>Hans</name>
+            <born>1967</born>
+            <address>...</address>
+        </family>
+        <family>...</family>
+    </person>
+    <person>...</person>
+</people>
+
