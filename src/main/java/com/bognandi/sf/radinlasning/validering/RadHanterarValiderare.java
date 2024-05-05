@@ -1,26 +1,10 @@
 package com.bognandi.sf.radinlasning.validering;
 
-import com.bognandi.sf.radinlasning.HanteringObjektTyp;
-import com.bognandi.sf.radinlasning.RadTyp;
-
-import java.util.Objects;
-
-import static java.util.Objects.isNull;
-
 public class RadHanterarValiderare {
 
     private static String REGEX_POSTNUMMER = "\\d{5}";
     private static String REGEX_TELEFONNUMMER = "0\\d{1,3}-\\d{5,8}";   //ungefärlig
     private static String REGEX_FODELSEAR = "\\d{4}";
-
-    public void kontrolleraRadTypGiltig(HanteringObjektTyp hanteringObjektTyp, RadTyp radTyp) {
-        if (isNull(hanteringObjektTyp) && RadTyp.PERSON.equals(radTyp)) {
-            return;     // initialt tillstånd
-        }
-
-        Objects.requireNonNull(hanteringObjektTyp, "Hanterat objekt måste anges");
-        Objects.requireNonNull(radTyp, "RadTyp måste anges");
-    }
 
     public void kontrolleraPersonData(String[] radData) {
         if (radData.length != 3 || radData[1].isBlank() || radData[2].isBlank()) {

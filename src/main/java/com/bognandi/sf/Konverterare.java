@@ -10,102 +10,63 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.*;
 
-@CommandLine.Command(
-        name = "rader2xml",
-        mixinStandardHelpOptions = true
-)
-public class Konverterare implements Runnable {
+public class Konverterare {
     private static Logger LOG = LoggerFactory.getLogger(Konverterare.class);
 
-    @CommandLine.Option(
-            names = {"-i", "--infil"},
-            required = true,
-            description = "Infil med rad-format som ska konverteras"
-    )
-    private String inFil;
+    RadHanterarValiderare validerare = new RadHanterarValiderare();
+    RadHanterare hanterare = new RadHanterare(validerare);
+    PeopleJaxbAssembler jaxbAssembler = new PeopleJaxbAssembler();
+    long radNummer;
 
-    @CommandLine.Option(
-            names = {"-u", "--utfil"},
-            required = true,
-            description = "Utfil med xml-format som har konverterats"
-    )
-    private String utFil;
-
-    @Override
-    public void run() {
-//        String inFil = "src/test/resources/infil.txt";
-//        String utFil = "utfil.xml";
-        try {
-            LOG.atInfo().log("Startar konvertering");
-            konvertera(new FileInputStream(inFil), new FileOutputStream(utFil));
-            LOG.atInfo().log("Konvertering avslutad");
-        } catch (JAXBException | ParserConfigurationException | IOException | TransformerException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void main(String[] args) throws ParserConfigurationException, TransformerException, IOException, JAXBException {
-        int exitCode = new CommandLine(new Konverterare()).execute(args);
-        System.exit(exitCode);
-    }
-
-    public static void konvertera(InputStream inData, OutputStream utData) throws ParserConfigurationException, TransformerException, IOException, JAXBException {
-        RadHanterarValiderare validerare = new RadHanterarValiderare();
-        RadHanterare hanterare = new RadHanterare(validerare);
+    public KonverteringResultat konvertera(InputStream inData, OutputStream utData) {
         RadHanterarTillstand tillstand = new RadHanterarTillstand();
 
-        BufferedReader reader;
-        long radNummer = 0;
+        lasInPersonerFranInData(inData, tillstand);
+        LOG.atInfo().log("Inläsning av infil avslutad");
 
-        try {
-            reader = new BufferedReader(new InputStreamReader(inData));
-            String line = reader.readLine();
+        People jaxbPeople = jaxbAssembler.assemblera(tillstand.getInlastaPersoner());
+        LOG.atInfo().log("Assemblering avslutad");
 
-            while (line != null) {
-                hanterare.hanteraRad(tillstand, line, ++radNummer);
+        skrivTillUtStream(jaxbPeople, utData);
+        LOG.atInfo().log("Skrivning till utfil avslutad");
 
-                // read next line
-                line = reader.readLine();
-            }
-
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        LOG.atInfo().log("""
-                Inläsning fullgjord, resultat:
-                Totalt antal rader: %d
-                Hanterade Rader: %d
-                Felaktiga Rader: %d
-                Okända rader: %d
-                Tomma rader: %d
-                Antal inlästa personer: %d
-                """.formatted(
+        return new KonverteringResultat(
                 radNummer,
+                tillstand.getInlastaPersoner().size(),
+                tillstand.getAntalFelaktigaPersoner(),
                 tillstand.getAntalHanteradeRader(),
                 tillstand.getAntalFelaktigaRader(),
                 tillstand.getAntalOkandaRader(),
-                tillstand.getAntalSkippadeRader(),
-                tillstand.getInlastaPersoner().size()
-        ));
-
-        OutputStream outputStream = new BufferedOutputStream(utData);
-        PeopleJaxbAssembler assembler = new PeopleJaxbAssembler();
-        People jaxbPeople = assembler.assemblera(tillstand.getInlastaPersoner());
-
-        JAXBContext jaxbContext = JAXBContext.newInstance(People.class);
-        Marshaller marshaller = jaxbContext.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        marshaller.marshal(jaxbPeople, outputStream);
-        outputStream.flush();
-        outputStream.close();
+                tillstand.getAntalSkippadeRader()
+        );
     }
 
+    private void lasInPersonerFranInData(InputStream inData, RadHanterarTillstand tillstand) {
+        BufferedReader reader;
+        radNummer = 0;
+
+        try {
+            reader = new BufferedReader(new InputStreamReader(inData));
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                hanterare.hanteraRad(tillstand, line, ++radNummer);
+            }
+
+        } catch (IOException e) {
+            throw new KonverterareException("Det gick inte att läsa infilen vid rad %d".formatted(radNummer), e);
+        }
+    }
+
+    private void skrivTillUtStream(People jaxbPeople, OutputStream utData) {
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(People.class);
+            Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            marshaller.marshal(jaxbPeople, utData);
+        } catch (JAXBException e) {
+            throw new KonverterareException("Det gick inte att skriva utfilen", e);
+        }
+    }
 }

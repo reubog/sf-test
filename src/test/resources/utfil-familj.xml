@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<people>
+    <person>
+        <firstname>Boris</firstname>
+        <lastname>Johnson</lastname>
+        <address>
+            <street>10 Downing Street</street>
+            <city>London</city>
+            <zip></zip>
+        </address>
+    </person>
+</people>

@@ -51,32 +51,51 @@ public class RadHanterare {
     }
 
     private void hanteraRadMedInnehall(RadTyp radTyp, RadHanterarTillstand tillstand, String[] radData) {
-        validerare.kontrolleraRadTypGiltig(tillstand.getAktuelltHanteratObjektTyp(), radTyp);
-
         switch (radTyp) {
-            case PERSON -> {
-                validerare.kontrolleraPersonData(radData);
-                tillstand.laggTillNyPerson(radData);
-            }
+            case PERSON -> hanteraPerson(tillstand, radData);
+            case TELEFONNUMMER -> hanteraTelefonnummer(tillstand, radData);
+            case ADRESS -> hanteraAdress(tillstand, radData);
+            case FAMILJEMEDLEM -> hanteraFamiljemedlem(tillstand, radData);
+        }
+    }
 
-            case TELEFONNUMMER -> {
-                validerare.kontrolleraTelefonnummerData(radData);
-                tillstand.laggTillTelefonnummer(radData);
-            }
+    private void hanteraPerson(RadHanterarTillstand tillstand, String[] radData) {
+        try {
+            validerare.kontrolleraPersonData(radData);
+            tillstand.laggTillNyPerson(radData);
+        } catch (ValideringException e) {
+            tillstand.felaktigDataForPerson(radData);
+            throw e;
+        }
+    }
 
-            case ADRESS -> {
-                validerare.kontrolleraAdressData(radData);
-                tillstand.laggTillAdress(radData);
-            }
-            case FAMILJEMEDLEM -> {
-                validerare.kontrolleraFamiljemedlemData(radData);
-                tillstand.laggTillNyFamiljemedlem(radData);
-            }
+    private void hanteraTelefonnummer(RadHanterarTillstand tillstand, String[] radData) {
+        try {
+            validerare.kontrolleraTelefonnummerData(radData);
+            tillstand.laggTillTelefonnummer(radData);
+        } catch (ValideringException e) {
+            tillstand.felaktigDataForPerson(radData);
+            throw e;
+        }
+    }
 
-            default -> {
-                tillstand.okandRad();
-                LOG.atInfo().log("Rad med okänt innehåll hittades: %s".formatted(String.join(KOLUMN_DELARE, radData)));
-            }
+    private void hanteraAdress(RadHanterarTillstand tillstand, String[] radData) {
+        try {
+            validerare.kontrolleraAdressData(radData);
+            tillstand.laggTillAdress(radData);
+        } catch (ValideringException e) {
+            tillstand.felaktigDataForPerson(radData);
+            throw e;
+        }
+    }
+
+    private void hanteraFamiljemedlem(RadHanterarTillstand tillstand, String[] radData) {
+        try {
+            validerare.kontrolleraFamiljemedlemData(radData);
+            tillstand.laggTillNyFamiljemedlem(radData);
+        } catch (ValideringException e) {
+            tillstand.felaktigDataForPerson(radData);
+            throw e;
         }
     }
 
